@@ -1,5 +1,7 @@
 import { Router } from "express";
 import auth from "./auth.js";
+import accounts from "./accounts.js";
+import authorization from "../middlewares/authorization.js";
 
 const router = Router();
 
@@ -8,5 +10,6 @@ router.get("/", (req, res) => {
 });
 
 router.use("/auth", auth);
+router.use("/accounts", authorization, accounts);
 
 export default router;
