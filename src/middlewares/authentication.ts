@@ -1,13 +1,9 @@
 import { admin } from "../loaders/firebase.js";
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { RequestHandler } from "express";
 import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET_KEY } from "../config/secretKey.js";
-
-export interface IAuthRequestHandler extends Request {
-  accessTokenData: string;
-}
 
 const authentication: RequestHandler = async (req, res, next) => {
   const { authentication } = req.headers;
@@ -59,8 +55,10 @@ const authentication: RequestHandler = async (req, res, next) => {
   }
 
   // access token 발급
-  const accessToken = jwt.sign({ uid }, TOKEN_SECRET_KEY);
-  // 추후에 만기기 기간도 포함시키면 좋을 듯
+  const accessToken = jwt.sign({ uid }, TOKEN_SECRET_KEY, {
+    expiresIn: "3600s",
+  });
+
   req.accessTokenData = accessToken;
   next();
 };
