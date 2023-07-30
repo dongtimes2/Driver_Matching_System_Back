@@ -41,7 +41,7 @@ const authentication: RequestHandler = async (req, res, next) => {
   }
 
   try {
-    const userData = await User.findById(uid);
+    const userData = await User.findById(uid).lean();
     if (!userData) {
       const user = new User({
         _id: uid,
