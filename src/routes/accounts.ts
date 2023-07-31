@@ -1,5 +1,6 @@
 import { Router } from "express";
 import User from "../models/User.js";
+import { UserType } from "../types/accounts.js";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get("/", async (req, res, next) => {
 });
 
 router.patch("/", async (req, res, next) => {
-  const { type } = req.body;
+  const { type }: { type: UserType } = req.body;
   const uid = req.uidData;
 
   if (type === "driver" || type === "passenger") {
