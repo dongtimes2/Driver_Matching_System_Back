@@ -52,19 +52,26 @@ const socketModule = async (server: HttpServer) => {
         passengerSid: socket.id,
       });
 
-      io.to(targetDriverSidList).emit(
-        "responseCallList",
-        callList.getCallList()
-      );
+      targetDriverSidList.length &&
+        io
+          .to(targetDriverSidList)
+          .emit("responseCallList", callList.getCallList());
       io.to(socket.id).emit("responseCallId", uuid);
       console.log("호출: ", callList.getCallList());
     });
 
     socket.on("sendCancelCall", (uuid) => {
       const driverSidList = driverList.getUserSidList();
+      const driverSidInRoomList = roomList.getDriverSidList();
+      const targetDriverSidList = driverSidList.filter(
+        (sid) => !driverSidInRoomList.includes(sid)
+      );
 
       callList.deleteCall(uuid);
-      io.to(driverSidList).emit("responseCallList", callList.getCallList());
+      targetDriverSidList.length &&
+        io
+          .to(targetDriverSidList)
+          .emit("responseCallList", callList.getCallList());
       console.log("취소요청: ", callList.getCallList());
     });
 
@@ -127,7 +134,7 @@ const socketModule = async (server: HttpServer) => {
     });
 
     // 기사가 새로 접속했을 때, 기존 승객 좌표도 보여주는 로직 구현 필요
-    /////////
+    ///////////
 
     socket.on("driver", () => {
       console.log("////////////////////////");
