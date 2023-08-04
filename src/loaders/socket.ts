@@ -35,11 +35,14 @@ const socketModule = async (server: HttpServer) => {
         type: user.type,
       };
 
-      user.type === "driver"
-        ? driverList.addUser(userData)
-        : passengerList.addUser(userData);
+      if (user.type === "driver") {
+        driverList.addUser(userData);
+        socket.emit("responseCallList", callList.getCallList());
+      } else {
+        passengerList.addUser(userData);
+      }
     });
-    ////
+
     socket.on("sendPassengerCoordinate", (coordinate: ICoordinate) => {
       const driverInRoomSidList = roomList.getDriverSidList();
       const targetDriverSidList = driverList
@@ -52,20 +55,25 @@ const socketModule = async (server: HttpServer) => {
         passengerSid: socket.id,
       });
 
-      io.to(targetDriverSidList).emit(
-        "responseCallList",
-        callList.getCallList()
-      );
+      targetDriverSidList.length &&
+        io
+          .to(targetDriverSidList)
+          .emit("responseCallList", callList.getCallList());
       io.to(socket.id).emit("responseCallId", uuid);
-      console.log("호출: ", callList.getCallList());
     });
 
     socket.on("sendCancelCall", (uuid) => {
       const driverSidList = driverList.getUserSidList();
+      const driverSidInRoomList = roomList.getDriverSidList();
+      const targetDriverSidList = driverSidList.filter(
+        (sid) => !driverSidInRoomList.includes(sid)
+      );
 
       callList.deleteCall(uuid);
-      io.to(driverSidList).emit("responseCallList", callList.getCallList());
-      console.log("취소요청: ", callList.getCallList());
+      targetDriverSidList.length &&
+        io
+          .to(targetDriverSidList)
+          .emit("responseCallList", callList.getCallList());
     });
 
     socket.on("sendAcceptCall", (call: ICallSocketData) => {
@@ -77,17 +85,6 @@ const socketModule = async (server: HttpServer) => {
         (sid) => !driverSidInRoomList.includes(sid)
       );
       const roomId = roomList.creteRoom(socket.id, call.passengerSid);
-      ///
-      console.log(
-        "아이디: ",
-        socket.id,
-        "필터리스트: ",
-        filteredDriverSidList,
-        "룸에있는 드라이버 리스트: ",
-        driverSidInRoomList,
-        "타깃 리스트: ",
-        targetDriverSidList
-      );
 
       socket.emit("responseCallList", [call]);
       callList.deleteCall(call.uuid);
@@ -108,7 +105,6 @@ const socketModule = async (server: HttpServer) => {
       const roomId = roomList.getRoomIdByUserSid(socket.id, "driver");
 
       roomId && io.to(roomId).emit("responseDriverCoordinate", coordinate);
-      console.log(roomId, "로", coordinate, "보냄");
     });
 
     socket.on("sendDisconnectMatching", () => {
@@ -124,23 +120,6 @@ const socketModule = async (server: HttpServer) => {
       roomId && socket.leave(roomId);
       roomId && roomList.deleteRoom(roomId);
       socket.emit("responseCallList", callList.getCallList());
-    });
-
-    // 기사가 새로 접속했을 때, 기존 승객 좌표도 보여주는 로직 구현 필요
-    /////////
-
-    socket.on("driver", () => {
-      console.log("////////////////////////");
-      console.log("기사유저", socket.rooms);
-      console.log("기사리스트", driverList.getUserList());
-      console.log("콜리스트", callList.getCallList());
-      console.log("룸리스트", roomList.getRoomList());
-    });
-
-    socket.on("passenger", () => {
-      console.log("////////////////////////");
-      console.log("승객유저", socket.rooms);
-      console.log("승객리스트", passengerList.getUserList());
     });
   });
 };

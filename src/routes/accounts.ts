@@ -25,7 +25,15 @@ router.patch("/", async (req, res, next) => {
 
   if (type === "driver" || type === "passenger") {
     try {
-      await User.findByIdAndUpdate(uid, { type });
+      const userData = await User.findByIdAndUpdate(
+        uid,
+        { type },
+        { new: true }
+      );
+      res.json({
+        name: userData?.name,
+        type: userData?.type,
+      });
     } catch (error) {
       console.error(error);
       next(new Error());
