@@ -2,8 +2,7 @@ import { admin } from "../loaders/firebase.js";
 import { RequestHandler } from "express";
 import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
 import User from "../models/User.js";
-import jwt from "jsonwebtoken";
-import { TOKEN_SECRET_KEY } from "../config/secretKey.js";
+import { getAccessToken, getRefreshToken } from "../utils/token.js";
 
 const authentication: RequestHandler = async (req, res, next) => {
   const { authentication } = req.headers;
@@ -43,23 +42,28 @@ const authentication: RequestHandler = async (req, res, next) => {
   try {
     const userData = await User.findById(uid).lean();
     if (!userData) {
-      const user = new User({
+      await new User({
         _id: uid,
         name,
-      });
-      await user.save();
+      }).save();
     }
   } catch (error) {
     console.error(error);
     return next(new Error());
   }
 
-  // access token 발급
-  const accessToken = jwt.sign({ uid }, TOKEN_SECRET_KEY, {
-    expiresIn: "3600s",
-  });
+  const accessToken = getAccessToken(uid);
+  let refreshToken = "";
+
+  try {
+    refreshToken = await getRefreshToken(uid);
+  } catch (error) {
+    console.error(error);
+    return next(new Error());
+  }
 
   req.accessTokenData = accessToken;
+  req.refreshTokenData = refreshToken;
   next();
 };
 

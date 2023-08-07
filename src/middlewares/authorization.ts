@@ -1,10 +1,6 @@
 import { RequestHandler } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { TOKEN_SECRET_KEY } from "../config/secretKey.js";
-
-interface IDecodedToken extends JwtPayload {
-  uid: string;
-}
+import { verifyAccessToken } from "../utils/token.js";
+import { IError } from "../types/error.js";
 
 const authorization: RequestHandler = async (req, res, next) => {
   const { authorization } = req.headers;
@@ -18,12 +14,19 @@ const authorization: RequestHandler = async (req, res, next) => {
   const accessToken = authorization.split(" ")[1];
 
   try {
-    const { uid } = jwt.verify(accessToken, TOKEN_SECRET_KEY) as IDecodedToken;
+    const uid = verifyAccessToken(accessToken);
     req.uidData = uid;
-  } catch (error) {
-    return res.status(401).json({
-      messsage: "유효한 access_token이 아님",
-    });
+  } catch (err) {
+    const error = err as IError;
+    if (error.message === "expired") {
+      return res.status(401).json({
+        message: "expired_access_token",
+      });
+    } else {
+      return res.status(401).json({
+        messsage: "유효한 access_token이 아님",
+      });
+    }
   }
 
   next();
