@@ -16,8 +16,9 @@ export class UserList {
   }
 
   getUser(userSid: string) {
-    return this.userList.find((user) => user.sid === userSid) as IUser;
+    return this.userList.find((user) => user.sid === userSid);
   }
+
   getUserList() {
     return this.userList;
   }

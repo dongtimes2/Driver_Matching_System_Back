@@ -19,7 +19,17 @@ export class CallList {
     this.callList = [...this.callList.filter((call) => call.uuid !== uuid)];
   }
 
+  deleteCallBySid(sid: string) {
+    this.callList = [
+      ...this.callList.filter((call) => call.passengerSid !== sid),
+    ];
+  }
+
   getCallList() {
     return this.callList;
+  }
+
+  getCallBySid(sid: string) {
+    return this.callList.find((call) => call.passengerSid === sid);
   }
 }
